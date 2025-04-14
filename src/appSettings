@@ -1,0 +1,21 @@
+const appSettings = {
+  appCredentials: {
+    clientId: process.env.CLIENTID, // Enter the application id here
+    tenantId: process.env.TENANTID, // Enter the tenant info here
+    clientSecret: process.env.CLIENTSECRET, // Enter the client secret here
+  },
+  authRoutes: {
+    redirect: process.env.POST_LOGIN_REDIRECT,
+    unauthorized: "/unauthorized",
+  },
+  protectedResources: {
+    graphAPI: {
+      endpoint: process.env.GRAPH_API_ENDPOINT, // Microsoft Graph API
+      scopes: [
+        process.env.GRAPH_API_SCOPES,
+      ],
+    },
+  },
+};
+
+module.exports = appSettings;

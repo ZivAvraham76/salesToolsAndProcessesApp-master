@@ -1,0 +1,38 @@
+{
+  "name": "salestoolsandprocessesapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "dev": "nodemon ./src/server.js"
+  },
+  "engines": {
+    "node": ">=16.17.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.405.0",
+    "@aws-sdk/client-secrets-manager": "^3.405.0",
+    "@aws-sdk/s3-request-presigner": "^3.405.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "axios": "^1.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.3",
+    "helmet": "^7.0.0",
+    "joi": "^17.4.2",
+    "jwks-rsa": "^3.1.0",
+    "lodash": "^4.17.21",
+    "microsoft-identity-express": "^1.0.0-beta"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "gulp-postcss": "^10.0.0",
+    "nodemon": "^3.1.9",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.1"
+  }
+}
