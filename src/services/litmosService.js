@@ -56,17 +56,13 @@ exports.getUserCourseData = async (lmsUserId, courseId) => {
     `/users/${lmsUserId}/courses/${courseId}?source=null&format=json&limit=1000`
   );
   if (!userCourseData) return undefined;
-  console.log("useID",lmsUserId);
+  // console.log("useID",lmsUserId);
   return userCourseData;
 };
 
 
 
-
-
-
 exports.getTrainingId = async (trainingName) => {
-  console.log(trainingName);
   try {
     const trainingData = await findTrainingDetail(trainingName);
     // trainingData[0] => learningPath ; trainingData[1] => courses
@@ -162,9 +158,10 @@ exports.getCourseIdInLearningPath = async (lpId) => {
       .map((e) => {
         return e[0];
       })
-      .map(({ Id }) => {
+      .map(({ Id,Description }) => {
         return {
           Id: Id,
+          Description: Description,
         };
       })
       .value();

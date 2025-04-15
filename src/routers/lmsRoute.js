@@ -11,7 +11,7 @@ router.get("/:lpName", lmsController.getTrainingData);
 router.get("/4sp/:lpName", lmsController.getTrainingDataSP);
 
 
-router.post("/4sp/onboarding", lmsController.getOnboardingData);
+// router.post("/4sp/onboarding", lmsController.getOnboardingData);
 
 
 module.exports = router;
