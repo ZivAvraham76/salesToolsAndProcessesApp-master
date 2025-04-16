@@ -5,7 +5,8 @@ const {
   getTrainingId,
   getCourseIdInLearningPath,
   getUserCourseData,
-  getUserTrainingData
+  getUserTrainingData,
+  getCourseDetails
 } = require("../services/litmosService");
 
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
@@ -14,15 +15,11 @@ class Lms {
   async getTrainingData(username, learningPathName) {
     try {
       const learningPathInfo = await getTrainingId(learningPathName);
-      // console.log("LP ID", learningPathInfo.Id)
+      // console.log("LP", learningPathInfo)
       const coursesInLearningPath = await getCourseIdInLearningPath(
         learningPathInfo.Id
       );
       // console.log("coursesInLearningPath", coursesInLearningPath);
-
-
-
-
 
       const lmsUserId = await getUserId(username);
       const trainingData = await this.#getModules(
@@ -41,15 +38,18 @@ class Lms {
           completed: module.Completed,
           course: _.split(course.Name, "|", 2)[0],
           courseDescription: course.Description,
+          CourseImageURL: course.CourseImageURL,
           courseId: course.Id,
           coursePercentageComplete: course.PercentageComplete,
           cid: course.Id,
           coriginalid: course.OriginalId,
+          StartDate: module.StartDate,
+          Score: module.Score,  
           accessUrl: `${URL_PREFIX}${course.OriginalId}/module/${module.OriginalId}?LPid=0`,
         }))
       );
 
-      // console.log("data", data);
+      console.log("data", data);
 
       return data;
     } catch (err) {
@@ -114,12 +114,17 @@ class Lms {
 
   // Private methods
 
+
+
   async #getModules(lmsUserId, coursesInLearningPath) {
     // console.log("coursesInLearningPath", coursesInLearningPath);
     const coursesModulesArray = await Promise.all(
       coursesInLearningPath.map(async({ Id, Description }) => {
         let userCourseData = await getUserCourseData(lmsUserId, Id);
+        const courseDetails = await getCourseDetails(Id);
+        
         userCourseData.Description = Description;
+        userCourseData.CourseImageURL = courseDetails.CourseImageURL;
         return userCourseData;
       })
     );
@@ -127,20 +132,23 @@ class Lms {
     
     const filteredCoursesModulesArray = coursesModulesArray.filter(course => course !== undefined);
     // console.log(filteredCoursesModulesArray); 
-    return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, PercentageComplete, Modules }) => {
+    return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, CourseImageURL, PercentageComplete, Modules }) => {
       return {
         Id,
         Name,
         OriginalId,
         Description,
+        CourseImageURL,
         PercentageComplete,
-        Modules: Modules.map(({ Id, Code, Name, Completed, OriginalId }) => {
+        Modules: Modules.map(({ Id, Code, Name, Completed, OriginalId, StartDate, Score }) => {
           return {
             Id: Id,
             Code: Code,
             Name: Name,
             Completed: Completed,
             OriginalId: OriginalId,
+            StartDate: StartDate,
+            Score: Score,
           };
         }),
       };

@@ -61,7 +61,6 @@ exports.getUserCourseData = async (lmsUserId, courseId) => {
 };
 
 
-
 exports.getTrainingId = async (trainingName) => {
   try {
     const trainingData = await findTrainingDetail(trainingName);
@@ -158,7 +157,7 @@ exports.getCourseIdInLearningPath = async (lpId) => {
       .map((e) => {
         return e[0];
       })
-      .map(({ Id,Description }) => {
+      .map(({ Id,Description}) => {
         return {
           Id: Id,
           Description: Description,
@@ -170,3 +169,16 @@ exports.getCourseIdInLearningPath = async (lpId) => {
     throw new Error(err);
   }
 };
+
+exports.getCourseDetails = async (courseId) => {
+  const response = await fetch(
+    `/courses/${courseId}/details?source=null&format=json`
+  );
+
+  if (!response) {
+    throw new Error(`Failed to get course details for course ${courseId}`);
+  }
+
+  return response;
+};
+
