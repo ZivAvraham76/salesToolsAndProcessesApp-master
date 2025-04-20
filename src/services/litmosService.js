@@ -42,11 +42,18 @@ async function getUserLearningPathData(lmsUserId) {
   return userLearningPatshData;
 }
 
+
+
+
+
+
 async function getUserCourseData1(lmsUserId) {
   const userCoursesData = await fetch(
     `/users/${lmsUserId}/courses?source=null&format=json&limit=1000`
   ); // We assume that user will not be register to more then 1000 learning paths
   if (!userCoursesData) return undefined;
+
+  console.log("userCoursesData", userCoursesData);
 
   return userCoursesData;
 }
@@ -90,6 +97,7 @@ async function findTrainingDetail(trainingName) {
   trainingData.push(getCoursesDetail(trainingName));
 
   const listOfTraining = await Promise.all(trainingData);
+
   listOfTraining.forEach((element) => {
     if (!element) throw new Error("Could not succeed to get list of training!");
   });
@@ -146,6 +154,7 @@ exports.getCourseIdInLearningPath = async (lpId) => {
     const courses = await fetch(
       `/learningpaths/${lpId}/courses?source=null&format=json`
     );
+    // console.log("courses", courses);
 
     if (courses === undefined)
       throw new Error(
@@ -182,3 +191,12 @@ exports.getCourseDetails = async (courseId) => {
   return response;
 };
 
+exports.getUserLearningPathDetails = async (userId, learningPathId) => {
+  const response = await fetch(
+    `/users/${userId}/learningpaths/${learningPathId}?source=null&format=json`
+  );
+  if (!response) {
+    throw new Error(`Failed to get user-specific learning path details for ${learningPathId}`);
+  }
+  return response;
+};

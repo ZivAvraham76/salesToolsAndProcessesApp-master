@@ -6,13 +6,15 @@ const {
   getCourseIdInLearningPath,
   getUserCourseData,
   getUserTrainingData,
-  getCourseDetails
+  getCourseDetails,
+  getUserLearningPathDetails
 } = require("../services/litmosService");
 
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
 
 class Lms {
   async getTrainingData(username, learningPathName) {
+
     try {
       const learningPathInfo = await getTrainingId(learningPathName);
       // console.log("LP", learningPathInfo)
@@ -22,6 +24,7 @@ class Lms {
       // console.log("coursesInLearningPath", coursesInLearningPath);
 
       const lmsUserId = await getUserId(username);
+      const userLearningPathDetails = await getUserLearningPathDetails(lmsUserId, learningPathInfo.Id);
       const trainingData = await this.#getModules(
         lmsUserId,
         coursesInLearningPath
@@ -49,68 +52,19 @@ class Lms {
         }))
       );
 
-      console.log("data", data);
+      // console.log("data", data);
 
-      return data;
+      return {
+        modules: data,
+        learningPath: userLearningPathDetails 
+      };
+  
     } catch (err) {
       console.log(err);
       return undefined;
     }
   }
 
-  // async getOnboardingData(username, onboardingList) {
-  //   try {
-  //     // console.log("🎯 its working !");
-  //     const lmsUserId = await getUserId(username);
-  //     const userTrainingData = await getUserTrainingData(lmsUserId);
-  //     // console.log("userTrainingData", userTrainingData);
-  //     const updatedOnboardingList = await this.#updateDataStructure(
-  //       userTrainingData,
-  //       onboardingList
-  //     );
-
-  //     // console.log("updatedOnboardingList", updatedOnboardingList);
-  //     return updatedOnboardingList;
-  //   } catch (err) {
-  //     console.log(err);
-  //     return undefined;
-  //   }
-  // }
-  
-
-  // async #updateDataStructure(userTrainingData, onboardingList) {
-  //   const filteredAndUpdated = onboardingList
-  //     .map((element) => {
-  //       let productTraining = userTrainingData[0].find(
-  //         (e) => e.Name === element.Title
-  //       );
-  
-  //       if (!productTraining) {
-  //         productTraining = userTrainingData[1].find(
-  //           (e) => e.Name === element.Title
-  //         );
-  //       }
-  
-  //       if (!productTraining) {
-  //         return null; 
-  //       }
-  
-  //       return {
-  //         ...element,
-  //         Id: productTraining.Id,
-  //         PercentageComplete: productTraining.PercentageComplete,
-  //         litmosLearningPathUrl: `${productTraining.CourseCreatedDate
-  //           ? process.env.LMS_COURSE_PATH_URL
-  //           : process.env.LMS_LEARNING_PATH_URL
-  //         }${productTraining.OriginalId}`
-  //       };
-  //     })
-  //     .filter(Boolean); 
-  
-  //   console.log("onboardingListfilterd", filteredAndUpdated[0]);
-  //   return filteredAndUpdated[0];
-  // }
-  
 
   // Private methods
 
@@ -125,6 +79,8 @@ class Lms {
         
         userCourseData.Description = Description;
         userCourseData.CourseImageURL = courseDetails.CourseImageURL;
+
+        console.log("userCourseData", userCourseData);
         return userCourseData;
       })
     );
