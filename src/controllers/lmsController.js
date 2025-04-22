@@ -27,22 +27,70 @@ exports.getTrainingDataSP = async function (req, res) {
   res.send({data,name});
 };
 
-// exports.getOnboardingData = async function (req, res) {
-//   console.log("🎯 getOnboardingData CALLED!");
-//   // console.log("req.body:", req.body);
-//   // console.log("req.session:", req.session);
-//   const username = (req.user = `MosheAshkenazi@mosh12.onmicrosoft.com`)
-//       ? "mosheas@checkpoint.com"
-//       : `field`;
-//     if (!username) {
-//       return res.status(401).json({ error: "Unauthorized" });
-//     }
+exports.postTrainingData = async function (req, res) {
+  try {
+    const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
+    ? "ziva@checkpoint.com"
+    : `field`;
+    if (!username) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
  
-//   const onboardingList = req.body;
-//   const data = await LmsModel.getOnboardingData(username, onboardingList);
-//   // console.log("data", data);
+    const requestData = req.body; // Get the data sent by the frontend
+ 
+ 
+    // console.log(username);
+    // const username = "mosheas@checkpoint.com";
+    const data = await LmsModel.getListData(username, requestData);
+ 
+    if (!data) {
+      return res.status(500).send({ error: "Failed to retrieve training data" });
+    }
+ 
+    const responseData = {
+      user: {
+        userBadgesPointsData: data.userBadgesPointsData,
+      },
+      producttraining: data.userTrainingData,
+    };
+    // const trialData = await LmsModel.getTrainingDataAndCoursesDetails(username,requestData)
+   
+ 
+    res.send(responseData);
+ 
+    // res.json(responseData);
+  } catch (error) {
+    console.error("Error fetching training data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
-//   if (!data) return res.status(500).send({});
-
-//   res.send(data);
-// }
+exports.getCourseAndLpDetails = async function (req, res) {
+  try {
+   
+    const username = (req.user = `roni@mosh12.onmicrosoft.com`)
+    ? "ronibu@checkpoint.com"
+    : `field`;
+  if (!username) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const courseId = req.params.courseId; // Get course ID from the URL
+    // console.log("Course ID:", courseId);
+    // console.log("User Name:", username);
+    if (!username) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    if (!courseId) {
+      return res.status(400).json({ error: "Course ID is required" });
+    }
+ 
+    // Fetch course details using the ID
+    const courseDetails = await LmsModel.getCourseResults(username, courseId);
+    res.json(courseDetails);
+  } catch (error) {
+    console.log("the error is from here")
+    console.error(error.stack);
+ 
+    res.status(500).json({ error: "Failed to fetch course details" });
+  }
+}

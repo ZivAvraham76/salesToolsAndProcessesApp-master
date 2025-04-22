@@ -1,6 +1,8 @@
 const axios = require("axios");
-
+let  counter = 0;
 const useAxios = (url = {}, options = {}) => {
+ counter++;
+ console.log("useAxios called", counter);
   return axios(url, options)
     .then(({ data }) => {
       return data;
