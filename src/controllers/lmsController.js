@@ -1,5 +1,7 @@
 const LmsModel = require("../models/LmsModel");
 
+//sales tool 
+
 exports.getTrainingData = async function (req, res, next) {
   const username = req.session.account.username;
   const name = req.session.account.name;
@@ -26,6 +28,10 @@ exports.getTrainingDataSP = async function (req, res) {
   if (!data) return res.status(500).send([]);
   res.send({data,name});
 };
+
+
+
+// technical training
 
 exports.postTrainingData = async function (req, res) {
   try {
@@ -68,8 +74,8 @@ exports.postTrainingData = async function (req, res) {
 exports.getCourseAndLpDetails = async function (req, res) {
   try {
    
-    const username = (req.user = `roni@mosh12.onmicrosoft.com`)
-    ? "ronibu@checkpoint.com"
+    const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
+    ? "ziva@checkpoint.com"
     : `field`;
   if (!username) {
     return res.status(401).json({ error: "Unauthorized" });

@@ -5,7 +5,7 @@ const router = express.Router();
 // App Controllers
 const lmsController = require("../controllers/lmsController");
 
-// sales tool routers
+// sales tool routers:
 
 // The below endpoint will be available only of the user is authenticated
 router.get("/:lpName", lmsController.getTrainingData);
@@ -15,7 +15,7 @@ router.get("/:lpName", lmsController.getTrainingData);
 router.get("/4sp/:lpName", lmsController.getTrainingDataSP);
 
 
-// technial training routers
+// technial training routers:
 
 router.post("/4sp", lmsController.postTrainingData);
 
