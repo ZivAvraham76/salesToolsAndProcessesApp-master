@@ -94,14 +94,16 @@ async getListData(username, BaseLineData) {
 
 async getCourseResults(username, course) {
   try {
+   
     const lmsUserId = await getUserId(username);
     const learningPathsCourses = await getLearningPathsCourses(course);
     // console.log("Learning Paths Courses:", learningPathsCourses);
 
     if (!learningPathsCourses || learningPathsCourses.length === 0) {
-      return [await this.getCourse(lmsUserId, course)];
+      return [await this.#getCourse(lmsUserId, course)];
     }
 
+    console.time("Fetching course results");
     const userLearningPathsCoursesResults = await Promise.all(
       learningPathsCourses.map(async (course) => {
         if (!course || !course.Id) {
@@ -109,12 +111,13 @@ async getCourseResults(username, course) {
           return undefined;
         }
 
-        return await this.getCourse(lmsUserId, course.Id).catch((error) => {
+        return await this.#getCourse(lmsUserId, course.Id).catch((error) => {
           console.error("Error fetching course description:", error.message);
           return undefined; // Handle the error and return undefined for this course
         });
       })
     );
+    console.timeEnd("Fetching course results");
 
     return userLearningPathsCoursesResults.filter((result) => result !== undefined);
   } catch (error) {
@@ -124,34 +127,57 @@ async getCourseResults(username, course) {
 }
 
 
-async #getCourse(lmsUserId, courseId) {
-  const courseDetail = await getCourseDetails(courseId);
-  let userCourseResults = await getUserCourseData(lmsUserId, courseId);
-  if (!userCourseResults) {
-    console.error(`User course data not found for course ID: ${courseId}`);
-    return ;
-  }
-
-  userCourseResults.litmosLearningPathUrl = `${process.env.LMS_COURSE_PATH_URL}${userCourseResults.OriginalId}`;
-  userCourseResults.Description = courseDetail?.Description || "No description available";
-  userCourseResults.CourseImageURL = courseDetail?.CourseImageURL || "No image available";
-
-  return userCourseResults;
-}
-
-
   // Private methods
 
+  // This function will update the list data to the user training data
+
+    // This function will get all the modules in the learning path
+
+    async #getModules(lmsUserId, coursesInLearningPath) {
+      console.log("coursesInLearningPath", coursesInLearningPath);
+      const coursesModulesArray = await Promise.all(
+        coursesInLearningPath.map(async(course) => {
+          let userCourseData = await getUserCourseData(lmsUserId, course.Id);
+          const courseDetails = await getCourseDetails(course.Id);
+          
+          userCourseData.Description = course.Description;
+          userCourseData.CourseImageURL = courseDetails.CourseImageURL;
+  
+          return userCourseData;
+        })
+      );
+      
+      const filteredCoursesModulesArray = coursesModulesArray.filter(course => course !== undefined);
+      return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, CourseImageURL, PercentageComplete, Modules }) => {
+        return {
+          Id,
+          Name,
+          OriginalId,
+          Description,
+          CourseImageURL,
+          PercentageComplete,
+          Modules: Modules.map(({ Id, Code, Name, Completed, OriginalId, StartDate, Score }) => {
+            return {
+              Id: Id,
+              Code: Code,
+              Name: Name,
+              Completed: Completed,
+              OriginalId: OriginalId,
+              StartDate: StartDate,
+              Score: Score,
+            };
+          }),
+        };
+      });
+    }
+
   async #updateDataStructure(userTrainingData, baseLineData) {
-    // console.log("baseLineData", baseLineData);
     for (const element of baseLineData) {
-      // userTrainingData[0] == user learningpaths data
       let productTraining = userTrainingData[0].find(
         (e) => e.Name === element.litmosLearningPathName
       );
  
       if (!productTraining) {
-        // userTrainingData[1] == user courses data
         productTraining = userTrainingData[1].find(
           (e) => e.Name === element.litmosLearningPathName
         );
@@ -195,45 +221,23 @@ async #getCourse(lmsUserId, courseId) {
     return baseLineData;
   }
 
-  async #getModules(lmsUserId, coursesInLearningPath) {
-    console.log("coursesInLearningPath", coursesInLearningPath);
-    const coursesModulesArray = await Promise.all(
-      coursesInLearningPath.map(async(course) => {
-        let userCourseData = await getUserCourseData(lmsUserId, course.Id);
-        const courseDetails = await getCourseDetails(course.Id);
-        
-        userCourseData.Description = course.Description;
-        userCourseData.CourseImageURL = courseDetails.CourseImageURL;
 
-        // console.log("userCourseData", userCourseData);
-        return userCourseData;
-      })
-    );
-    // console.log("userCourseData", coursesModulesArray);
-    
-    const filteredCoursesModulesArray = coursesModulesArray.filter(course => course !== undefined);
-    // console.log(filteredCoursesModulesArray); 
-    return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, CourseImageURL, PercentageComplete, Modules }) => {
-      return {
-        Id,
-        Name,
-        OriginalId,
-        Description,
-        CourseImageURL,
-        PercentageComplete,
-        Modules: Modules.map(({ Id, Code, Name, Completed, OriginalId, StartDate, Score }) => {
-          return {
-            Id: Id,
-            Code: Code,
-            Name: Name,
-            Completed: Completed,
-            OriginalId: OriginalId,
-            StartDate: StartDate,
-            Score: Score,
-          };
-        }),
-      };
-    });
+// This function will get the course details and the user course data 
+
+  async #getCourse(lmsUserId, courseId) {
+  
+    const courseDetail = await getCourseDetails(courseId);
+    let userCourseResults = await getUserCourseData(lmsUserId, courseId);
+    if (!userCourseResults) {
+      console.error(`User course data not found for course ID: ${courseId}`);
+      return ;
+    }
+  
+    userCourseResults.litmosLearningPathUrl = `${process.env.LMS_COURSE_PATH_URL}${userCourseResults.OriginalId}`;
+    userCourseResults.Description = courseDetail?.Description || "No description available";
+    userCourseResults.CourseImageURL = courseDetail?.CourseImageURL || "No image available";
+
+    return userCourseResults;
   }
 }
 

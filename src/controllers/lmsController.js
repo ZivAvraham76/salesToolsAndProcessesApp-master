@@ -73,6 +73,9 @@ exports.postTrainingData = async function (req, res) {
 
 exports.getCourseAndLpDetails = async function (req, res) {
   try {
+
+    
+
    
     const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
     ? "ziva@checkpoint.com"
@@ -90,9 +93,12 @@ exports.getCourseAndLpDetails = async function (req, res) {
       return res.status(400).json({ error: "Course ID is required" });
     }
  
+
+  
     // Fetch course details using the ID
     const courseDetails = await LmsModel.getCourseResults(username, courseId);
     res.json(courseDetails);
+    
   } catch (error) {
     console.log("the error is from here")
     console.error(error.stack);
