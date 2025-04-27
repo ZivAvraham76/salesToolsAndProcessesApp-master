@@ -171,55 +171,57 @@ async getCourseResults(username, course) {
       });
     }
 
-  async #updateDataStructure(userTrainingData, baseLineData) {
-    for (const element of baseLineData) {
-      let productTraining = userTrainingData[0].find(
-        (e) => e.Name === element.litmosLearningPathName
-      );
- 
-      if (!productTraining) {
-        productTraining = userTrainingData[1].find(
-          (e) => e.Name === element.litmosLearningPathName
+    async #updateDataStructure(userTrainingData, baseLineData) {
+      for (const element of baseLineData) {
+        let productTraining = userTrainingData[0].find(
+          (e) => e.Id === element.litmosLearningPathId
         );
-      }
- 
-      element.Id = productTraining?.Id;
-      element.PercentageComplete = productTraining?.PercentageComplete;
-      element.litmosLearningPathUrl = `${productTraining?.CourseCreatedDate
-        ? process.env.LMS_COURSE_PATH_URL
-        : process.env.LMS_LEARNING_PATH_URL
-        }${productTraining?.OriginalId}`;
- 
-        if (productTraining?.Id) {
-          let details = null;
-          try {
-            details = await getLearningPathDetails(productTraining.Id);
-          } catch (err) {
-            console.warn(`Could not fetch learning path details for ID ${productTraining.Id}`);
-          }
    
-          if (details) {
-            console.log("learningPathDetails", details);
-            element.CourseImageURL = details?.LearningPathImageURL || null;
-          } else {
-            try {
-              details = await getCourseDetails(productTraining.Id);
-              console.log("courseDetails", details);
-              element.CourseImageURL = details?.CourseImageURL || null;
-            } catch (err) {
-              console.warn(`Could not fetch course details for ID ${productTraining.Id}`);
-              element.CourseImageURL = null;
-            }
-          }
-        } else {
-          element.CourseImageURL = null;
+        if (!productTraining) {
+          productTraining = userTrainingData[1].find(
+            (e) => e.Id === element.litmosLearningPathId
+          );
         }
-      }
-
-      // console.log("baseLineData", baseLineData);
+        // console.log("element", element);
+       
    
-    return baseLineData;
-  }
+        // element.litmosLearningPathName = productTraining?.Name;
+        element.PercentageComplete = productTraining?.PercentageComplete;
+        element.litmosLearningPathUrl = `${productTraining?.CourseCreatedDate
+          ? process.env.LMS_COURSE_PATH_URL
+          : process.env.LMS_LEARNING_PATH_URL
+          }${productTraining?.OriginalId}`;
+   
+          if (productTraining?.Id) {
+            let details = null;
+            try {
+              details = await getLearningPathDetails(productTraining.Id);
+            } catch (err) {
+              console.warn(`Could not fetch learning path details for ID ${productTraining.Id}`);
+            }
+     
+            if (details) {
+              // console.log("learningPathDetails", details);
+              element.CourseImageURL = details?.LearningPathImageURL || null;
+            } else {
+              try {
+                details = await getCourseDetails(productTraining.Id);
+                // console.log("courseDetails", details);
+                element.CourseImageURL = details?.CourseImageURL || null;
+              } catch (err) {
+                console.warn(`Could not fetch course details for ID ${productTraining.Id}`);
+                element.CourseImageURL = null;
+              }
+            }
+          } else {
+            element.CourseImageURL = null;
+          }
+        }
+   
+        // console.log("baseLineData", baseLineData);
+     
+      return baseLineData;
+    }
 
 
 // This function will get the course details and the user course data 
