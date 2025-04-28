@@ -6,7 +6,7 @@ const fetch = require("../utilities/fetch");
 // getUserId function will retrive the user litmos id 
 
 exports.getUserId = async (username) => {
-  console.log("[getUserId] Called with username:", username);
+  // console.log("[getUserId] Called with username:", username);
   const response = await fetch(
     `/users?search=${username}&source=null&limit=1000&format=json&showInactive=false`
   );
@@ -106,7 +106,7 @@ async function getCoursesDetail(trainingName) {
 
 /* functions for details (user detils or training details) of a spesific training object - for technical training, sales tool and onboarding */
 
-// This function will get the user course data (for description and percentage complete)
+// This function will get the user course data (for description, percentage complete and modules)
 exports.getUserCourseData = async (lmsUserId, courseId) => {
   const userCourseData = await fetch(
     `/users/${lmsUserId}/courses/${courseId}?source=null&format=json&limit=1000`

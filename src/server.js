@@ -32,9 +32,9 @@ const port = process.env.PORT || "3000";
 // app.use(express.urlencoded({ extended: false }));
 // app.use(express.json());
 
-// app.get("/health-check-path", (req, res) => {
-//   res.status(200).send("ok");
-// });
+app.get("/health-check-path", (req, res) => {
+  res.status(200).send("ok");
+});
 
 async function run() {
   try {
@@ -119,11 +119,11 @@ async function run() {
     app.use("/sp-data", validateBearerToken, getLpData);
 
     // Checks if authenticated via session
-    app.use(msid.isAuthenticated());
+    // app.use(msid.isAuthenticated());
 
-    app.use("/lp", getLpData);
+    // app.use("/lp", getLpData);
 
-    app.use("/", staticFilesRouter);
+    // app.use("/", staticFilesRouter);
 
     // Change to app.use("/pages/",CustomePagesRouter) and update the clients urls
     app.use("/", CustomePagesRouter);

@@ -2,31 +2,27 @@ const LmsModel = require("../models/LmsModel");
 
 //sales tool 
 
-exports.getTrainingData = async function (req, res, next) {
-  const username = req.session.account.username;
-  const name = req.session.account.name;
-  const learningPathName = req.params.lpName;
-  const data = await LmsModel.getTrainingData(username, learningPathName);
+// exports.getTrainingData = async function (req, res, next) {
+//   const username = req.session.account.username;
+//   const learningPathName = req.params.lpName;
+//   const data = await LmsModel.getTrainingData(username, learningPathName);
 
-  if (!data) return res.status(500).send({});
+//   if (!data) return res.status(500).send({});
 
-  res.send({ data, name });
-};
+//   res.send({ data });
+// };
 
 exports.getTrainingDataSP = async function (req, res) {
-  const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
-    ? "ziva@checkpoint.com"
-    : `field`;
-    const name = req.user.given_name;
-    const learningPathName = req.params.lpName;
-    // console.log(learningPathName);
-    // console.log(username);
-  // const username = "mosheas@checkpoint.com";
-  const data = await LmsModel.getTrainingData(username, learningPathName);
+
+  const { username} = req.user;
+
+    const learningPathId = req.params.lpId;
+
+  const data = await LmsModel.getTrainingData(username, learningPathId);
 
 
   if (!data) return res.status(500).send([]);
-  res.send({data,name});
+  res.send({data});
 };
 
 
@@ -35,9 +31,9 @@ exports.getTrainingDataSP = async function (req, res) {
 
 exports.postTrainingData = async function (req, res) {
   try {
-    const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
-    ? "ziva@checkpoint.com"
-    : `field`;
+
+
+    const { username } = req.user;
     if (!username) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -47,7 +43,7 @@ exports.postTrainingData = async function (req, res) {
  
     // console.log(username);
     // const username = "mosheas@checkpoint.com";
-    const data = await LmsModel.getListData(username, requestData);
+    const data = await LmsModel.getUserTrainingData(username, requestData);
  
     if (!data) {
       return res.status(500).send({ error: "Failed to retrieve training data" });
@@ -74,12 +70,7 @@ exports.postTrainingData = async function (req, res) {
 exports.getCourseAndLpDetails = async function (req, res) {
   try {
 
-    
-
-   
-    const username = (req.user = `ziv@mosh12.onmicrosoft.com`)
-    ? "ziva@checkpoint.com"
-    : `field`;
+    const { username} = req.user;
   if (!username) {
     return res.status(401).json({ error: "Unauthorized" });
   }

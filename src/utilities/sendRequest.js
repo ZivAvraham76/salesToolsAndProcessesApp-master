@@ -14,7 +14,7 @@ class SendRequest {
     this.requestsQueue = [];
     this.requestTimestamps = [];
 
-    this.maxRequests = parseInt(process.env.MAX_REQUEST_SENT || "90");
+    this.maxRequests = parseInt(process.env.MAX_REQUEST_SENT || "99");
 
     SendRequest.instance = this;
     return this;
@@ -47,6 +47,7 @@ class SendRequest {
 
     while (this.requestsQueue.length > 0) {
       try {
+
         const now = Date.now();
 
         // Clean timestamps older than 1 minute
@@ -65,7 +66,7 @@ class SendRequest {
 
         const nextRequest = this.requestsQueue.shift();
         this.counter++;
-        console.log("Sending request number:", this.counter);
+        console.log("Sending request number:", this.counter, Date());
         // console.log("len timestemp:", this.requestTimestamps.length);
 
         if (nextRequest) {

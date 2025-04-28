@@ -8,11 +8,11 @@ const lmsController = require("../controllers/lmsController");
 // sales tool routers:
 
 // The below endpoint will be available only of the user is authenticated
-router.get("/:lpName", lmsController.getTrainingData);
+// router.get("/:lpName", lmsController.getTrainingData);
 
 
 // The below endpoint will be available only of the user is authenticated
-router.get("/4sp/:lpName", lmsController.getTrainingDataSP);
+router.get("/4sp/:lpId", lmsController.getTrainingDataSP);
 
 
 // technial training routers:
