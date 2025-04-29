@@ -180,7 +180,7 @@ async getCourseResults(username, course) {
  
         } catch (err) {
           console.error(`Error fetching data for course ${course.Id}:`, err.message);
-          return undefined; // תחזירי undefined אם יש בעיה
+          return undefined; 
         }
         })
       )
@@ -211,27 +211,38 @@ async getCourseResults(username, course) {
     }
  
     async #updateDataStructure(userTrainingData, baseLineData) {
- 
-      for (const element of baseLineData) {
-        let productTraining = userTrainingData[0].find(
-          (e) => e.Id === element.litmosLearningPathId
-        );
-        let foundIn = 0; // 0 = Learning Paths
-   
+  const limit = pLimit(5);
+
+  const learningPathsMap = new Map();
+  const coursesMap = new Map();
+
+  for (const lp of userTrainingData[0]) {
+    learningPathsMap.set(lp.Id, lp);
+  }
+
+  console.log("learningPathsMap", learningPathsMap);
+  for (const course of userTrainingData[1]) {
+    coursesMap.set(course.Id, course);
+  }
+
+  const updatedBaseLineData = await Promise.all(
+    baseLineData.map(element =>
+      limit(async () => {
+        let productTraining = learningPathsMap.get(element.litmosLearningPathId);
+        let foundIn = 0;
+
         if (!productTraining) {
-          productTraining = userTrainingData[1].find(
-            (e) => e.Id === element.litmosLearningPathId
-          );
-          foundIn = 1; // 1 = Courses
+          productTraining = coursesMap.get(element.litmosLearningPathId);
+          foundIn = 1;
         }
- 
+
         element.Id = element.litmosLearningPathId;
         element.PercentageComplete = productTraining?.PercentageComplete;
         element.litmosLearningPathUrl = `${productTraining?.CourseCreatedDate
           ? process.env.LMS_COURSE_PATH_URL
           : process.env.LMS_LEARNING_PATH_URL
           }${productTraining?.OriginalId}`;
-   
+
         if (productTraining?.Id) {
           let details = null;
           try {
@@ -243,7 +254,7 @@ async getCourseResults(username, course) {
           } catch (err) {
             console.warn(`Could not fetch details for ID ${productTraining.Id}`);
           }
-   
+
           if (details) {
             element.CourseImageURL = foundIn === 0
               ? details?.LearningPathImageURL || null
@@ -254,10 +265,15 @@ async getCourseResults(username, course) {
         } else {
           element.CourseImageURL = null;
         }
-      }
-   
-      return baseLineData;
-    }
+
+        return element;
+      })
+    )
+  );
+
+  return updatedBaseLineData;
+}
+
    
  
  
