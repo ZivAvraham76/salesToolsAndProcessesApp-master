@@ -55,7 +55,7 @@ const validateBearerToken = async (req, res, next) => {
 
     // Check that the aud   aud: 'api://56214ef0-66f7-4e05-b871-eed7a16a7fb8/', metch the clientID
     // Token is valid
-    console.log(decoded)
+    // console.log(decoded)
     // console.log(decoded.unique_name);
     // req.user = decoded.unique_name;
     let username = decoded.unique_name;

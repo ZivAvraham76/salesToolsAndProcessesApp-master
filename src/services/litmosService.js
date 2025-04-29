@@ -11,7 +11,7 @@ exports.getUserId = async (username) => {
     `/users?search=${username}&source=null&limit=1000&format=json&showInactive=false`
   );
 
-  console.log("[getUserId] API response:", response);
+  // console.log("[getUserId] API response:", response);
   if (!response[0]) {
     throw new Error("Failed to get user litmos id");
   }
