@@ -70,6 +70,8 @@ exports.postTrainingData = async function (req, res) {
 exports.getCourseAndLpDetails = async function (req, res) {
   try {
 
+    console.time("⏱ getCourseAndLpDetails");
+
     const { username} = req.user;
   if (!username) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -88,6 +90,8 @@ exports.getCourseAndLpDetails = async function (req, res) {
   
     // Fetch course details using the ID
     const courseDetails = await LmsModel.getCourseResults(username, courseId);
+
+    console.timeEnd("⏱ getCourseAndLpDetails");
     res.json(courseDetails);
     
   } catch (error) {

@@ -22,13 +22,15 @@ const { getCachedEntity } = require('../utilities/cacheHelpers');
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
 const pLimit = require('p-limit');
 const ONE_DAY = 24 * 60 * 60 * 1000;
-const ONE_WEEK = 7 * ONE_DAY;     
+const ONE_WEEK = 7 * ONE_DAY;
+const ONE_HOUR = 60 * 60 * 1000;     
 
 class Lms {
   constructor() {
   this.userIdCache = new CacheWithExpiration(ONE_DAY);
   this.courseDetailsCache = new CacheWithExpiration(ONE_WEEK);
   this.learningPathDetailsCache = new CacheWithExpiration(ONE_WEEK);
+  this.userCourseDataCache = new CacheWithExpiration(ONE_HOUR);
   }
  
   async getCachedUserId(username) {
@@ -41,6 +43,11 @@ class Lms {
   
   async getCachedLearningPathDetails(learningPathId) {
     return getCachedEntity(this.learningPathDetailsCache, learningPathId, () => getLearningPathDetails(learningPathId));
+  }
+
+  async getCachedUserCourseData(userId, courseId) {
+    const cacheKey = `${userId}::${courseId}`;
+    return getCachedEntity(this.userCourseDataCache, cacheKey, () => getUserCourseData(userId, courseId));
   }
   
  
@@ -133,7 +140,6 @@ async getCourseResults(username, course) {
       return [await this.#getCourse(lmsUserId, course)];
     }
  
-    console.time("Fetching course results");
     const userLearningPathsCoursesResults = await Promise.all(
       learningPathsCourses.map(async (course) => {
         if (!course || !course.Id) {
@@ -147,9 +153,10 @@ async getCourseResults(username, course) {
         });
       })
     );
-    console.timeEnd("Fetching course results");
  
+    // console.log("userLearningPathsCoursesResults", userLearningPathsCoursesResults);
     return userLearningPathsCoursesResults.filter((result) => result !== undefined);
+
   } catch (error) {
     console.error("Error in getCourseResults:", error.message);
     throw error;
@@ -170,7 +177,7 @@ async getCourseResults(username, course) {
         coursesInLearningPath.map(async(course) =>
           limit(async () => {
             try {
-          let userCourseData = await getUserCourseData(lmsUserId, course.Id);
+          let userCourseData = await this.getCachedUserCourseData(lmsUserId, course.Id);
           const courseDetails = await this.getCachedCourseDetails(course.Id);
          
           userCourseData.Description = course.Description;
@@ -220,7 +227,7 @@ async getCourseResults(username, course) {
     learningPathsMap.set(lp.Id, lp);
   }
 
-  console.log("learningPathsMap", learningPathsMap);
+  // console.log("learningPathsMap", learningPathsMap);
   for (const course of userTrainingData[1]) {
     coursesMap.set(course.Id, course);
   }
@@ -282,7 +289,7 @@ async getCourseResults(username, course) {
   async #getCourse(lmsUserId, courseId) {
  
     const courseDetail = await this.getCachedCourseDetails(courseId);
-    let userCourseResults = await getUserCourseData(lmsUserId, courseId);
+    let userCourseResults = await this.getCachedUserCourseData(lmsUserId, courseId);
     if (!userCourseResults) {
       console.error(`User course data not found for course ID: ${courseId}`);
       return ;
