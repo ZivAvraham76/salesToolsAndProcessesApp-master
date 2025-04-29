@@ -15,6 +15,7 @@ const {
 const e = require("express");
 
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
+const pLimit = require('p-limit');
 
 class Lms {
   constructor() {
@@ -149,9 +150,12 @@ async getCourseResults(username, course) {
     // This function will get all the modules in the learning path
 
     async #getModules(lmsUserId, coursesInLearningPath) {
+      const limit = pLimit(5);
       // console.log("coursesInLearningPath", coursesInLearningPath);
       const coursesModulesArray = await Promise.all(
-        coursesInLearningPath.map(async(course) => {
+        coursesInLearningPath.map(async(course) => 
+          limit(async () => {
+            try {
           let userCourseData = await getUserCourseData(lmsUserId, course.Id);
           const courseDetails = await getCourseDetails(course.Id);
           
@@ -159,8 +163,14 @@ async getCourseResults(username, course) {
           userCourseData.CourseImageURL = courseDetails.CourseImageURL;
   
           return userCourseData;
+
+        } catch (err) {
+          console.error(`Error fetching data for course ${course.Id}:`, err.message);
+          return undefined; // תחזירי undefined אם יש בעיה
+        }
         })
-      );
+      )
+    );
       
       const filteredCoursesModulesArray = coursesModulesArray.filter(course => course !== undefined);
       return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, CourseImageURL, PercentageComplete, Modules }) => {

@@ -66,7 +66,7 @@ class SendRequest {
 
         const nextRequest = this.requestsQueue.shift();
         this.counter++;
-        console.log("Sending request number:", this.counter, Date());
+        console.log("Sending request number:", this.counter, Date(), nextRequest.request.uri);
         // console.log("len timestemp:", this.requestTimestamps.length);
 
         if (nextRequest) {

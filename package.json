@@ -26,7 +26,8 @@
     "joi": "^17.4.2",
     "jwks-rsa": "^3.1.0",
     "lodash": "^4.17.21",
-    "microsoft-identity-express": "^1.0.0-beta"
+    "microsoft-identity-express": "^1.0.0-beta",
+    "p-limit": "^3.1.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
