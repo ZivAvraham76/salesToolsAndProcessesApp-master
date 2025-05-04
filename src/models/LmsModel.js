@@ -27,14 +27,23 @@ const ONE_WEEK = 7 * ONE_DAY;
 
 class Lms {
   constructor() {
-  this.userIdCache = new CacheWithExpiration(ONE_DAY);
+  // this.userIdCache = new CacheWithExpiration(ONE_DAY);
   this.courseDetailsCache = new CacheWithExpiration(ONE_WEEK);
   this.learningPathDetailsCache = new CacheWithExpiration(ONE_WEEK);
   this.userCourseDataCache = new CacheWithExpiration(ONE_WEEK);
   }
  
-  async getCachedUserId(username) {
-    return getCachedEntity(this.userIdCache, username, () => getUserId(username));
+  async getCachedUserId(username, cachedUserId = null) {
+    
+    // If client provided a cached userId, use it
+    console.log(`Client provided cached userId: ${cachedUserId}`);
+    if (cachedUserId) {
+      console.log(`Using client-provided cached userId: ${cachedUserId}`);
+      return cachedUserId;
+    }
+    
+    // Otherwise fall back to server-side
+    return getUserId(username);
   }
   
   async getCachedCourseDetails(courseId) {
@@ -53,16 +62,16 @@ class Lms {
  
  
  
-  // Get all data for sales tools
+  // Get all data for sales tools and onboarding
  
-  async getTrainingData(username, learningPathId) {
+  async getTrainingData(username, learningPathId, cachedUserId = null) {
     try {
       // const learningPathInfo = await getTrainingId(learningPathName);
       const coursesInLearningPath = await getLearningPathsCourses(
         learningPathId
       );
  
-      const lmsUserId = await this.getCachedUserId(username);
+      const lmsUserId = await this.getCachedUserId(username, cachedUserId);
       const userLearningPathDetails = await getUserLearningPathDetails(lmsUserId, learningPathId);
       const trainingData = await this.#getModules(
         lmsUserId,
@@ -94,8 +103,11 @@ class Lms {
       // console.log("data", data);
  
       return {
+        lmsUserId: lmsUserId,
+
         modules: data,
-        learningPath: userLearningPathDetails
+        learningPath: userLearningPathDetails,
+
       };
  
     } catch (err) {
@@ -109,7 +121,7 @@ class Lms {
 async getUserTrainingData(username, BaseLineData) {
   try {
     // console.log("username", username);
-    const lmsUserId = await this.getCachedUserId(username);
+    const lmsUserId = await this.getCachedUserId(username, cachedUserId);
     const userTrainingData = await getUserTrainingData(lmsUserId);
  
  
@@ -132,7 +144,7 @@ async getUserTrainingData(username, BaseLineData) {
 async getCourseResults(username, course) {
   try {
    
-    const lmsUserId = await this.getCachedUserId(username);
+    const lmsUserId = await this.getCachedUserId(username, cachedUserId);
     const learningPathsCourses = await getLearningPathsCourses(course);
     // console.log("Learning Paths Courses:", learningPathsCourses);
  

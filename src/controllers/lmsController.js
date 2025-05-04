@@ -18,7 +18,9 @@ exports.getTrainingDataSP = async function (req, res) {
 
     const learningPathId = req.params.lpId;
 
-  const data = await LmsModel.getTrainingData(username, learningPathId);
+    const cachedUserId = req.query.cachedUserId;
+
+  const data = await LmsModel.getTrainingData(username, learningPathId, cachedUserId);
 
 
   if (!data) return res.status(500).send([]);
