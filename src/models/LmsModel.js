@@ -21,16 +21,16 @@ const { getCachedEntity } = require('../utilities/cacheHelpers');
  
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
 const pLimit = require('p-limit');
+const Min = 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const ONE_WEEK = 7 * ONE_DAY;
-const ONE_HOUR = 60 * 60 * 1000;     
 
 class Lms {
   constructor() {
   this.userIdCache = new CacheWithExpiration(ONE_DAY);
   this.courseDetailsCache = new CacheWithExpiration(ONE_WEEK);
   this.learningPathDetailsCache = new CacheWithExpiration(ONE_WEEK);
-  this.userCourseDataCache = new CacheWithExpiration(ONE_HOUR);
+  this.userCourseDataCache = new CacheWithExpiration(ONE_WEEK);
   }
  
   async getCachedUserId(username) {
