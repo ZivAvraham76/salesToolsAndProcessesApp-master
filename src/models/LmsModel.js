@@ -3,7 +3,7 @@ const _ = require("lodash");
 const {
   getUserId,
   getTrainingId,
-
+ 
   // getCourseIdInLearningPath,
   getUserCourseData,
   getUserTrainingData,
@@ -13,42 +13,74 @@ const {
   getLearningPathDetails,
 } = require("../services/litmosService");
 const e = require("express");
+const CacheWithExpiration = require('../utilities/CacheWithExpiration');
 
+const { getCachedEntity } = require('../utilities/cacheHelpers');
+
+
+ 
 const URL_PREFIX = process.env.LMS_COURSE_PATH_URL;
+const pLimit = require('p-limit');
+const Min = 60 * 1000;
+const ONE_DAY = 24 * 60 * 60 * 1000;
+const ONE_WEEK = 7 * ONE_DAY;
 
 class Lms {
   constructor() {
-    this.userIdCache = {};
+  // this.userIdCache = new CacheWithExpiration(ONE_DAY);
+  this.courseDetailsCache = new CacheWithExpiration(ONE_WEEK);
+  this.learningPathDetailsCache = new CacheWithExpiration(ONE_WEEK);
+  this.userCourseDataCache = new CacheWithExpiration(ONE_WEEK);
   }
-
-  async getCachedUserId(username) {
-    if (this.userIdCache[username]) {
-      return this.userIdCache[username];
+ 
+  // storage for userid in clend side
+  async getCachedUserId(username, cachedUserId = null) {
+    
+    // If client provided a cached userId, use it
+    console.log(`Client provided cached userId: ${cachedUserId}`);
+    if (cachedUserId) {
+      console.log(`Using client-provided cached userId: ${cachedUserId}`);
+      return cachedUserId;
     }
-    const userId = await getUserId(username);
-    this.userIdCache[username] = userId;
-    return userId;
+    
+    // Otherwise fall back to server-side
+    return getUserId(username);
+  }
+  
+  async getCachedCourseDetails(courseId) {
+    return getCachedEntity(this.courseDetailsCache, courseId, () => getCourseDetails(courseId));
+  }
+  
+  async getCachedLearningPathDetails(learningPathId) {
+    return getCachedEntity(this.learningPathDetailsCache, learningPathId, () => getLearningPathDetails(learningPathId));
   }
 
-
-  // Get all data for sales tools
-
-  async getTrainingData(username, learningPathId) {
+  async getCachedUserCourseData(userId, courseId) {
+    const cacheKey = `${userId}::${courseId}`;
+    return getCachedEntity(this.userCourseDataCache, cacheKey, () => getUserCourseData(userId, courseId));
+  }
+  
+ 
+ 
+ 
+  // Get all data for sales tools and onboarding
+ 
+  async getTrainingData(username, learningPathId, cachedUserId = null) {
     try {
       // const learningPathInfo = await getTrainingId(learningPathName);
       const coursesInLearningPath = await getLearningPathsCourses(
         learningPathId
       );
-
-      const lmsUserId = await this.getCachedUserId(username);
+ 
+      const lmsUserId = await this.getCachedUserId(username, cachedUserId);
       const userLearningPathDetails = await getUserLearningPathDetails(lmsUserId, learningPathId);
       const trainingData = await this.#getModules(
         lmsUserId,
         coursesInLearningPath
       );
-
+ 
       // console.log("trainingData", trainingData);
-
+ 
       const data = trainingData.flatMap((course) =>
         course.Modules.map((module) => ({
           id: module.Id,
@@ -68,29 +100,32 @@ class Lms {
           accessUrl: `${URL_PREFIX}${course.OriginalId}/module/${module.OriginalId}?LPid=0`,
         }))
       );
-
+ 
       // console.log("data", data);
-
+ 
       return {
+        lmsUserId: lmsUserId,
+
         modules: data,
-        learningPath: userLearningPathDetails 
+        learningPath: userLearningPathDetails,
+
       };
-  
+ 
     } catch (err) {
       console.log(err);
       return undefined;
     }
   }
-
+ 
 // Get all data for technical training
-
+ 
 async getUserTrainingData(username, BaseLineData) {
   try {
     // console.log("username", username);
-    const lmsUserId = await this.getCachedUserId(username);
+    const lmsUserId = await this.getCachedUserId(username, cachedUserId);
     const userTrainingData = await getUserTrainingData(lmsUserId);
-
-
+ 
+ 
     const data = await this.#updateDataStructure(
       userTrainingData,
       BaseLineData
@@ -104,64 +139,73 @@ async getUserTrainingData(username, BaseLineData) {
     return undefined;
   }
 }
-
+ 
 // Get data for specific training object (for technical trainig popup)
-
+ 
 async getCourseResults(username, course) {
   try {
    
-    const lmsUserId = await this.getCachedUserId(username);
+    const lmsUserId = await this.getCachedUserId(username, cachedUserId);
     const learningPathsCourses = await getLearningPathsCourses(course);
     // console.log("Learning Paths Courses:", learningPathsCourses);
-
+ 
     if (!learningPathsCourses || learningPathsCourses.length === 0) {
       return [await this.#getCourse(lmsUserId, course)];
     }
-
-    console.time("Fetching course results");
+ 
     const userLearningPathsCoursesResults = await Promise.all(
       learningPathsCourses.map(async (course) => {
         if (!course || !course.Id) {
           console.warn("Invalid course data:", course);
           return undefined;
         }
-
+ 
         return await this.#getCourse(lmsUserId, course.Id).catch((error) => {
           console.error("Error fetching course description:", error.message);
           return undefined; // Handle the error and return undefined for this course
         });
       })
     );
-    console.timeEnd("Fetching course results");
-
+ 
+    // console.log("userLearningPathsCoursesResults", userLearningPathsCoursesResults);
     return userLearningPathsCoursesResults.filter((result) => result !== undefined);
+
   } catch (error) {
     console.error("Error in getCourseResults:", error.message);
     throw error;
   }
 }
-
-
+ 
+ 
   // Private methods
-
+ 
   // This function will update the list data to the user training data
-
+ 
     // This function will get all the modules in the learning path
-
+ 
     async #getModules(lmsUserId, coursesInLearningPath) {
+      const limit = pLimit(5);
       // console.log("coursesInLearningPath", coursesInLearningPath);
       const coursesModulesArray = await Promise.all(
-        coursesInLearningPath.map(async(course) => {
-          let userCourseData = await getUserCourseData(lmsUserId, course.Id);
-          const courseDetails = await getCourseDetails(course.Id);
-          
+        coursesInLearningPath.map(async(course) =>
+          limit(async () => {
+            try {
+          let userCourseData = await this.getCachedUserCourseData(lmsUserId, course.Id);
+          const courseDetails = await this.getCachedCourseDetails(course.Id);
+         
           userCourseData.Description = course.Description;
           userCourseData.CourseImageURL = courseDetails.CourseImageURL;
-  
+ 
           return userCourseData;
+ 
+        } catch (err) {
+          console.error(`Error fetching data for course ${course.Id}:`, err.message);
+          return undefined; 
+        }
         })
-      );
-      
+      )
+    );
+     
       const filteredCoursesModulesArray = coursesModulesArray.filter(course => course !== undefined);
       return filteredCoursesModulesArray.map(({ Id, Name, OriginalId, Description, CourseImageURL, PercentageComplete, Modules }) => {
         return {
@@ -185,19 +229,31 @@ async getCourseResults(username, course) {
         };
       });
     }
-
+ 
     async #updateDataStructure(userTrainingData, baseLineData) {
-      for (const element of baseLineData) {
-        let productTraining = userTrainingData[0].find(
-          (e) => e.Id === element.litmosLearningPathId
-        );
-        let foundIn = 0; // 0 = Learning Paths
-    
+  const limit = pLimit(5);
+
+  const learningPathsMap = new Map();
+  const coursesMap = new Map();
+
+  for (const lp of userTrainingData[0]) {
+    learningPathsMap.set(lp.Id, lp);
+  }
+
+  // console.log("learningPathsMap", learningPathsMap);
+  for (const course of userTrainingData[1]) {
+    coursesMap.set(course.Id, course);
+  }
+
+  const updatedBaseLineData = await Promise.all(
+    baseLineData.map(element =>
+      limit(async () => {
+        let productTraining = learningPathsMap.get(element.litmosLearningPathId);
+        let foundIn = 0;
+
         if (!productTraining) {
-          productTraining = userTrainingData[1].find(
-            (e) => e.Id === element.litmosLearningPathId
-          );
-          foundIn = 1; // 1 = Courses
+          productTraining = coursesMap.get(element.litmosLearningPathId);
+          foundIn = 1;
         }
 
         element.Id = element.litmosLearningPathId;
@@ -206,19 +262,19 @@ async getCourseResults(username, course) {
           ? process.env.LMS_COURSE_PATH_URL
           : process.env.LMS_LEARNING_PATH_URL
           }${productTraining?.OriginalId}`;
-    
+
         if (productTraining?.Id) {
           let details = null;
           try {
             if (foundIn === 0) {
-              details = await getLearningPathDetails(productTraining.Id);
+              details = await this.getCachedLearningPathDetails(productTraining.Id);
             } else {
-              details = await getCourseDetails(productTraining.Id);
+              details = await this.getCachedCourseDetails(productTraining.Id);
             }
           } catch (err) {
             console.warn(`Could not fetch details for ID ${productTraining.Id}`);
           }
-    
+
           if (details) {
             element.CourseImageURL = foundIn === 0
               ? details?.LearningPathImageURL || null
@@ -229,32 +285,37 @@ async getCourseResults(username, course) {
         } else {
           element.CourseImageURL = null;
         }
-      }
-    
-      return baseLineData;
-    }
-    
 
+        return element;
+      })
+    )
+  );
 
-// This function will get the course details and the user course data 
+  return updatedBaseLineData;
+}
 
+   
+ 
+ 
+// This function will get the course details and the user course data
+ 
   async #getCourse(lmsUserId, courseId) {
-  
-    const courseDetail = await getCourseDetails(courseId);
-    let userCourseResults = await getUserCourseData(lmsUserId, courseId);
+ 
+    const courseDetail = await this.getCachedCourseDetails(courseId);
+    let userCourseResults = await this.getCachedUserCourseData(lmsUserId, courseId);
     if (!userCourseResults) {
       console.error(`User course data not found for course ID: ${courseId}`);
       return ;
     }
-  
+ 
     userCourseResults.litmosLearningPathUrl = `${process.env.LMS_COURSE_PATH_URL}${userCourseResults.OriginalId}`;
     userCourseResults.Description = courseDetail?.Description || "No description available";
     userCourseResults.CourseImageURL = courseDetail?.CourseImageURL || "No image available";
-
+ 
     return userCourseResults;
   }
 }
-
+ 
 const lms = new Lms();
-
+ 
 module.exports = lms;
