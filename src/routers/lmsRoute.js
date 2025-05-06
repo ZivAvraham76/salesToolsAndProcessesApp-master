@@ -10,16 +10,15 @@ const lmsController = require("../controllers/lmsController");
 // The below endpoint will be available only of the user is authenticated
 // router.get("/:lpName", lmsController.getTrainingData);
 
-
-// The below endpoint will be available only of the user is authenticated
-router.get("/4sp/:lpId", lmsController.getTrainingDataSP);
-
-
-// technial training routers:
-
-router.post("/4sp", lmsController.postTrainingData);
-
 // get popup data
 router.get("/4sp/courses/:courseId", lmsController.getCourseAndLpDetails);
+
+// get learningpath data (for onboarding and sales tools)
+router.get("/4sp/:lpId", lmsController.getTrainingDataSP);
+
+// get user data (for technical training)
+router.post("/4sp", lmsController.postTrainingData);
+
+
 
 module.exports = router;

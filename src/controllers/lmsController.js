@@ -18,7 +18,9 @@ exports.getTrainingDataSP = async function (req, res) {
 
     const learningPathId = req.params.lpId;
 
-  const data = await LmsModel.getTrainingData(username, learningPathId);
+    const cachedUserId = req.query.cachedUserId;
+
+  const data = await LmsModel.getTrainingData(username, learningPathId, cachedUserId);
 
 
   if (!data) return res.status(500).send([]);
@@ -70,6 +72,8 @@ exports.postTrainingData = async function (req, res) {
 exports.getCourseAndLpDetails = async function (req, res) {
   try {
 
+    console.time("⏱ getCourseAndLpDetails");
+
     const { username} = req.user;
   if (!username) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -88,6 +92,8 @@ exports.getCourseAndLpDetails = async function (req, res) {
   
     // Fetch course details using the ID
     const courseDetails = await LmsModel.getCourseResults(username, courseId);
+
+    console.timeEnd("⏱ getCourseAndLpDetails");
     res.json(courseDetails);
     
   } catch (error) {
